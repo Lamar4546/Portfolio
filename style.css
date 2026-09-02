@@ -306,22 +306,29 @@ a { color: inherit; }
   border-left: 1px solid var(--line);
   border-top: 3px solid var(--panel-accent, var(--accent));
   padding: 5.5rem 2rem 2rem;
-  z-index: 40;
+  /* Keep the panel and its close control above the fixed navigation. */
+  z-index: 60;
   transform: translateX(100%);
   transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.2s ease;
   overflow-y: auto;
+  touch-action: pan-y;
 }
 .panel.is-open { transform: translateX(0); }
 .panel__close {
   position: absolute;
-  top: 1.5rem; right: 1.5rem;
-  background: none; border: none;
+  top: 1rem; right: 1rem;
+  width: 2.75rem; height: 2.75rem;
+  display: grid; place-items: center;
+  background: var(--bg-raised); border: 1px solid var(--line);
+  border-radius: 100px;
   color: var(--muted);
   font-size: 1.5rem;
   cursor: pointer;
   line-height: 1;
+  touch-action: manipulation;
 }
-.panel__close:hover { color: var(--text); }
+.panel__close:hover,
+.panel__close:focus-visible { color: var(--text); border-color: var(--panel-accent, var(--accent)); }
 .panel__stop {
   font-family: var(--font-mono);
   font-size: 0.75rem;

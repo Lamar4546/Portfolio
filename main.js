@@ -68,6 +68,8 @@
   const panelNote = document.getElementById("panelNote");
   const panelLink = document.getElementById("panelLink");
   let currentOpenIndex = -1;
+  // A manually closed panel stays dismissed until the car leaves that stop.
+  let dismissedStationIndex = -1;
 
   function openPanel(index) {
     if (currentOpenIndex === index) return;
@@ -95,11 +97,31 @@
   }
 
   function closePanel() {
+    if (currentOpenIndex !== -1) {
+      dismissedStationIndex = currentOpenIndex;
+    }
     panel.classList.remove("is-open");
     currentOpenIndex = -1;
   }
 
-  document.querySelector(".panel__close").addEventListener("click", closePanel);
+  const panelClose = document.getElementById("panelClose");
+  panelClose.addEventListener("click", closePanel);
+
+  // The panel exits to the right, so a right swipe dismisses it on touch devices.
+  let panelSwipeStart = null;
+  panel.addEventListener("pointerdown", (event) => {
+    if (!panel.classList.contains("is-open") || event.pointerType === "mouse") return;
+    panelSwipeStart = { x: event.clientX, y: event.clientY };
+    panel.setPointerCapture(event.pointerId);
+  });
+  panel.addEventListener("pointerup", (event) => {
+    if (!panelSwipeStart) return;
+    const deltaX = event.clientX - panelSwipeStart.x;
+    const deltaY = event.clientY - panelSwipeStart.y;
+    panelSwipeStart = null;
+    if (deltaX > 64 && Math.abs(deltaX) > Math.abs(deltaY)) closePanel();
+  });
+  panel.addEventListener("pointercancel", () => { panelSwipeStart = null; });
 
   /* ---------- three.js scene ---------- */
   const canvas = document.getElementById("scene");
@@ -538,10 +560,11 @@
       const d = pos.distanceTo(car.position);
       if (d < nearestDist) { nearestDist = d; nearestIndex = i; }
     });
-    if (nearestDist < OPEN_RADIUS) {
+    if (nearestDist > CLOSE_RADIUS) {
+      if (currentOpenIndex !== -1) closePanel();
+      dismissedStationIndex = -1;
+    } else if (nearestDist < OPEN_RADIUS && nearestIndex !== dismissedStationIndex) {
       openPanel(nearestIndex);
-    } else if (nearestDist > CLOSE_RADIUS && currentOpenIndex !== -1) {
-      closePanel();
     }
 
     // camera follow (third-person, slightly above/behind)
